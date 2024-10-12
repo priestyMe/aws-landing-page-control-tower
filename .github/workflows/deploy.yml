@@ -1,0 +1,64 @@
+name: Terraform
+
+on:
+    pull_request:
+      branches:
+        - main
+      paths:
+        - 'aws-landing-page-control-tower/**'   # Only trigger when files in the terraform directory are changed
+        - '!README.md'                          # Changes to README.md does not trigger deployment
+        - '!**/.github/**'                      # Exclude the .github directory
+        - '!**/.gitignore'                      # Exclude the .gitignore file
+  
+    push:
+      branches:
+        - feature/*  # Trigger when changes are pushed to any feature branch
+      paths:
+        - 'aws-landing-page-control-tower/**'   # Only trigger when files in the terraform directory are changed
+        - '!README.md'                          # Changes to README.md does not trigger deployment
+        - '!**/.github/**'                      # Exclude the .github directory
+        - '!**/.gitignore'                      # Exclude the .gitignore file
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.5.0
+
+      - name: Configure AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          echo "AWS credentials configured."
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa  # Setting proper permissions for the private key
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: aws-landing-page-control-tower
+      
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: aws-landing-page-control-tower
+
+      - name: Terraform Plan
+        run: terraform plan -var="instance_type=${{ secrets.INSTANCE_TYPE }}" -var="ami_id=${{ secrets.AMI_ID }}" -var="region=${{ secrets.AWS_REGION }}" -var="ssh_ip=${{ secrets.SSH_IP }}" -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -var="ssh_key_path=~/.ssh/id_rsa" -var="key_name=${{ secrets.AWS_KEY_NAME }}"
+        working-directory: aws-landing-page-control-tower
+        
+      - name: Terraform Apply # run only on merged PR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -var="instance_type=${{ secrets.INSTANCE_TYPE }}" -var="ami_id=${{ secrets.AMI_ID }}" -var="region=${{ secrets.AWS_REGION }}" -var="ssh_ip=${{ secrets.SSH_IP }}" -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -var="ssh_key_path=~/.ssh/id_rsa" -var="key_name=${{ secrets.AWS_KEY_NAME }}"
+        working-directory: aws-landing-page-control-tower
+        
