@@ -12,7 +12,7 @@ on:
   
     push:
       branches:
-        - feature/*  # Trigger when changes are pushed to any feature branch
+        - main
       paths:
         - 'aws-landing-page-control-tower/**'   # Only trigger when files in the terraform directory are changed
         - '!README.md'                          # Changes to README.md does not trigger deployment
@@ -61,5 +61,5 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve -var="instance_type=${{ secrets.INSTANCE_TYPE }}" -var="ami_id=${{ secrets.AMI_ID }}" -var="region=${{ secrets.AWS_REGION }}" -var="ssh_ip=${{ secrets.SSH_IP }}" -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -var="ssh_key_path=~/.ssh/id_rsa" -var="key_name=${{ secrets.AWS_KEY_NAME }}"
         working-directory: aws-landing-page-control-tower
-        
+
         
