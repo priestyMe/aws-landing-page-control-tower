@@ -1,15 +1,6 @@
 name: Terraform
 
 on:
-    pull_request:
-      branches:
-        - main
-      paths:
-        - 'aws-landing-page-control-tower/**'   # Only trigger when files in the terraform directory are changed
-        - '!README.md'                          # Changes to README.md does not trigger deployment
-        - '!**/.github/**'                      # Exclude the .github directory
-        - '!**/.gitignore'                      # Exclude the .gitignore file
-  
     push:
       branches:
         - main
